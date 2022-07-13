@@ -1,8 +1,11 @@
 {
+  "homepage": "HTTP://tougerthao.github.io/google-books",
   "name": "google-books",
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "redeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -12,6 +15,7 @@
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
     "@mui/material": "^5.9.0",
+    "gh-pages": "^4.0.0",
     "next": "12.2.2",
     "react": "18.2.0",
     "react-dom": "18.2.0"
