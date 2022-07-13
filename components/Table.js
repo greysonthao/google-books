@@ -12,7 +12,7 @@ export default function BasicTable({ searchResults, handleOpen }) {
   const formatAuthors = (authors) => {
     let authorsString = "";
 
-    for (let i = 0; i < authors.length; i++) {
+    for (let i = 0; i < authors?.length; i++) {
       authorsString = authorsString + authors[i];
 
       if (authors.length === i + 1) {
@@ -22,14 +22,14 @@ export default function BasicTable({ searchResults, handleOpen }) {
       authorsString += " [, ";
     }
 
-    for (let i = 0; i < authors.length - 1; i++) {
+    for (let i = 0; i < authors?.length - 1; i++) {
       authorsString += "]";
     }
 
     return authorsString;
   };
 
-  const tableContents = searchResults?.items.map((book) => (
+  const tableContents = searchResults?.items?.map((book) => (
     <TableRow
       key={book.id}
       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
@@ -49,7 +49,7 @@ export default function BasicTable({ searchResults, handleOpen }) {
 
   return (
     <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 650 }} aria-label="simple table">
+      <Table sx={{ minWidth: 300 }} aria-label="simple table">
         <TableHead>
           <TableRow>
             <TableCell sx={{ fontWeight: "bold" }}>Author(s)</TableCell>

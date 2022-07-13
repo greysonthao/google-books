@@ -7,6 +7,7 @@ import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Table from "../components/Table";
 import BookModal from "../components/BookModal";
+import Pagination from "@mui/material/Pagination";
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -19,6 +20,8 @@ export default function Home() {
   const [mostRecentPubDate, setMostRecentPubDate] = React.useState(null);
   const [error, setError] = React.useState(null);
   const [serverResponseTime, setServerResponseTime] = React.useState(null);
+  const [pageNumber, setPageNumber] = React.useState(1);
+  const [startIndex, setStartIndex] = React.useState(0);
 
   React.useEffect(() => {
     const findMostCommonAuthor = () => {
@@ -28,7 +31,7 @@ export default function Home() {
         const resultsArray = [...searchResults.items];
 
         for (let i = 0; i < resultsArray.length; i++) {
-          for (let j = 0; j < resultsArray[i].volumeInfo.authors.length; j++) {
+          for (let j = 0; j < resultsArray[i].volumeInfo.authors?.length; j++) {
             authorsArray.push(resultsArray[i].volumeInfo.authors[j]);
           }
         }
@@ -46,11 +49,10 @@ export default function Home() {
     };
 
     findMostCommonAuthor();
-    console.log("Most Common Author: ", mostCommonAuthor);
   }, [mostCommonAuthor, searchResults]);
 
   React.useEffect(() => {
-    const findEarliestPubDate = () => {
+    const findPubDates = () => {
       if (searchResults) {
         const resultsArray = [...searchResults.items];
 
@@ -58,23 +60,23 @@ export default function Home() {
 
         for (let i = 0; i < resultsArray.length; i++) {
           datesArray.push(new Date(resultsArray[i].volumeInfo?.publishedDate));
-          console.log("published date: ", datesArray[i]);
         }
 
         const minDate = new Date(Math.min(...datesArray));
-        console.log("Earliest Publication Date: ", minDate);
         setEarliestPubDate(minDate);
 
         const maxDate = new Date(Math.max(...datesArray));
-        console.log("Most Recent Publication Date: ", maxDate);
         setMostRecentPubDate(maxDate);
       }
     };
 
-    findEarliestPubDate();
-    console.log("Earliest Pub Date: ", earliestPubDate);
+    findPubDates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchResults]);
+
+  /* React.useEffect(() => {
+    updatePage();
+  }, [startIndex]); */
 
   const handleOpen = (book) => {
     setOpen(true);
@@ -84,6 +86,8 @@ export default function Home() {
   const handleClose = () => setOpen(false);
 
   const handleSubmit = async () => {
+    setStartIndex(0);
+    setPageNumber(1);
     console.log("Submit Clicked");
     if (searchTerm.length === 0) {
       return;
@@ -95,7 +99,11 @@ export default function Home() {
       const startTime = performance.now();
 
       const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${searchTerm}`
+        `https://www.googleapis.com/books/v1/volumes?startIndex=${startIndex}&q=${searchTerm}`
+      );
+
+      console.log(
+        `https://www.googleapis.com/books/v1/volumes?startIndex=${startIndex}&q=${searchTerm}`
       );
 
       const result = await res.json();
@@ -111,6 +119,50 @@ export default function Home() {
       setSearchTerm("");
     } catch (err) {
       setError(err);
+    }
+  };
+
+  const updatePage = async () => {
+    try {
+      setError(null);
+
+      const startTime = performance.now();
+
+      const res = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?startIndex=${startIndex}&q=${prevSearchTerm}`
+      );
+
+      console.log(
+        `https://www.googleapis.com/books/v1/volumes?startIndex=${startIndex}&q=${prevSearchTerm}`
+      );
+
+      const result = await res.json();
+
+      const endTime = performance.now();
+
+      setServerResponseTime(endTime - startTime);
+
+      setSearchResults(result);
+    } catch (err) {
+      setError(err);
+    }
+  };
+
+  const handlePageChange = (event, value) => {
+    setPageNumber(value);
+    if (value === 1) {
+      //FETCH DATA AT START INDEX OF 0
+      console.log("page number: ", value);
+      const newStartIndex = value * 0;
+      setStartIndex(newStartIndex);
+      updatePage();
+    } else {
+      //FETCH DATA AT START INDEX OF 10
+      console.log("page number: ", value);
+      const newStartIndex = (value - 1) * 10;
+      setStartIndex(newStartIndex);
+      console.log("search results: ", searchResults);
+      updatePage();
     }
   };
 
@@ -136,8 +188,6 @@ export default function Home() {
           noValidate
           autoComplete="off"
         >
-          {/* <TextField id="outlined-basic" label="Outlined" variant="outlined" />
-          <TextField id="filled-basic" label="Filled" variant="filled" /> */}
           <TextField
             id="standard-basic"
             label="Search"
@@ -148,7 +198,7 @@ export default function Home() {
             value={searchTerm}
           />
           <Button variant="contained" onClick={handleSubmit}>
-            Search
+            Submit
           </Button>
         </Box>
         <Container maxWidth="md" sx={{ marginTop: "1rem" }}>
@@ -201,21 +251,16 @@ export default function Home() {
           handleClose={handleClose}
           selectedBook={selectedBook}
         />
-        {/* <Modal
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box sx={style}>
-            <Typography id="modal-modal-title" variant="h6" component="h2">
-              Text in a modal
-            </Typography>
-            <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-              Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-            </Typography>
-          </Box>
-        </Modal> */}
+        <Box display="flex" justifyContent="center" margin="2rem 0 8rem 0">
+          {searchResults && (
+            <Pagination
+              count={Math.ceil(searchResults.totalItems / 10)}
+              color="primary"
+              page={pageNumber}
+              onChange={handlePageChange}
+            />
+          )}
+        </Box>
       </Box>
     </div>
   );
