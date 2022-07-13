@@ -17,6 +17,8 @@ export default function Home() {
   const [mostCommonAuthor, setMostCommonAuthor] = React.useState(null);
   const [earliestPubDate, setEarliestPubDate] = React.useState(null);
   const [mostRecentPubDate, setMostRecentPubDate] = React.useState(null);
+  const [error, setError] = React.useState(null);
+  const [serverResponseTime, setServerResponseTime] = React.useState(null);
 
   React.useEffect(() => {
     const findMostCommonAuthor = () => {
@@ -87,17 +89,29 @@ export default function Home() {
       return;
     }
 
-    const res = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${searchTerm}`
-    );
+    try {
+      setError(null);
 
-    const result = await res.json();
+      const startTime = performance.now();
 
-    setSearchResults(result);
+      const res = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${searchTerm}`
+      );
 
-    setPrevSearchTerm(searchTerm);
+      const result = await res.json();
 
-    setSearchTerm("");
+      const endTime = performance.now();
+
+      setServerResponseTime(endTime - startTime);
+
+      setSearchResults(result);
+
+      setPrevSearchTerm(searchTerm);
+
+      setSearchTerm("");
+    } catch (err) {
+      setError(err);
+    }
   };
 
   return (
@@ -138,6 +152,14 @@ export default function Home() {
           </Button>
         </Box>
         <Container maxWidth="md" sx={{ marginTop: "1rem" }}>
+          {error && (
+            <Typography
+              textAlign="center"
+              sx={{ margin: "1.5rem 0 0 0", color: "red" }}
+            >
+              Error: {error}
+            </Typography>
+          )}
           {searchResults && (
             <Typography textAlign="center" sx={{ margin: "1.5rem 0 0 0" }}>
               Total Results for &quot;{prevSearchTerm}&quot;:{" "}
@@ -157,6 +179,11 @@ export default function Home() {
           {mostRecentPubDate && (
             <Typography textAlign="center">
               Most Recent Publication: {mostRecentPubDate.toString()}
+            </Typography>
+          )}
+          {serverResponseTime && (
+            <Typography textAlign="center">
+              Server Response Time: {serverResponseTime.toFixed(2)} milliseconds
             </Typography>
           )}
           {searchResults && (
